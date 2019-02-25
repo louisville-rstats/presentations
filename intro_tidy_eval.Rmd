@@ -1,0 +1,106 @@
+---
+title: "rstudio::conf Tidy Eval"
+author: "Nate Kratzer"
+date: "2018-02-25"
+output: rmdformats::readthedown
+---
+
+```{r, message = FALSE, warning = FALSE, echo = FALSE}
+library(tidyverse)
+```
+
+## What is it and do I need it?
+
+Tidy Eval is a way to use tidyverse functions in a programmatic context. 
+
+For example, let's say you are trying to loop over a list of countries and the first step is to select the country you're on. The code below will break because it looks for a variable called 'country' and doesn't find it.
+```{r, eval = FALSE}
+select(country)
+```
+
+What we want is for select to look inside the country variable to find 'Canada', 'Costa Rica' and so on for each country in our list. We can do this with `!!`
+```{r, eval = FALSE}
+select(!!country)
+```
+
+There are ways to program things without tidy eval. One example is making good use of the `...` operator. Personally I find tidy eval less confusing than `...`, but `...` can be used in many of the simpler tidyeval situations. 
+
+## That's...weird
+
+This sort of problem actually does exist in base R as well (e.g. functions like: subset, transform, with) - but it's common in the tidyverse in part because tidyverse accepts unquoted names.
+
+Let's make it less weird by breaking down what's actually happening with the strange '!!' 
+
+### Quoting and Unquoting
+
+The issue of when we evaluate something is linked to the idea of quoting and unquoting things. In base R, 
+`quote()` will quote what you type in. But we need something that will quote what the function user types in. (Note: for me the function user is often a list that I'm running through `purrr`). To quote something from the user we need `enquo()`
+
+To unquote something, we use `!!`
+
+### An example
+```{r}
+grouped_mean <- function(data, group_var, summary_var) {
+  group_var <- enquo(group_var)
+  summary_var <- enquo(summary_var)
+
+  data %>%
+    group_by(!!group_var) %>%
+    summarise(mean = mean(!!summary_var, na.rm = TRUE))
+}
+```
+
+We'll use the starwars dataset from dplyr
+```{r}
+glimpse(starwars)
+```
+
+
+```{r}
+grouped_mean(starwars, species, height)
+```
+
+```{r}
+grouped_mean(starwars, homeworld, mass)
+```
+
+## Three more verbs
+
+`!!!` is like `!!` but for lists. 
+`:=` is for creating new names, for example in a mutate pipe
+`quo_name()` creates a string
+
+## Putting it all together
+
+### An example from https://tidyeval.tidyverse.org/modifying-inputs.html
+```{r}
+grouped_mean2 <- function(.data, .summary_var, ...) {
+  summary_var <- enquo(.summary_var)
+  group_vars <- enquos(...)
+
+  # Get and modify the default name
+  summary_nm <- quo_name(summary_var)
+  summary_nm <- paste0("avg_", summary_nm)
+
+  .data %>%
+    group_by(!!!group_vars) %>%
+    summarise(!!summary_nm := mean(!!summary_var))  # Unquote the name
+}
+```
+
+```{r}
+grouped_mean2(starwars, height, gender, species)
+```
+
+## How can I learn more?
+
+There are a lot of tidyeval resources - but I'd say the best currently availabe one is this free bookdown book by Lionel Henry and Hadley Wickham: https://tidyeval.tidyverse.org/
+
+## Other rstudio::conf takeaways
+
+Almost all of the slides are online here: https://github.com/kbroman/RStudioConf2019Slides, the video icon also links to a recording of the talk.
+
+I particularly enjoyed the talk on design thinking from Hilary Parker: https://resources.rstudio.com/rstudio-conf-2019/cultivating-creativity-in-data-work
+
+And the keynote from Felienne: https://resources.rstudio.com/rstudio-conf-2019/opening-keynote-day2
+
