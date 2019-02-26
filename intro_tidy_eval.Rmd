@@ -7,6 +7,7 @@ output: rmdformats::readthedown
 
 ```{r, message = FALSE, warning = FALSE, echo = FALSE}
 library(tidyverse)
+library(knitr)
 ```
 
 ## What is it and do I need it?
@@ -57,18 +58,18 @@ glimpse(starwars)
 
 
 ```{r}
-grouped_mean(starwars, species, height)
+grouped_mean(starwars, species, height) %>% head() %>% kable()
 ```
 
 ```{r}
-grouped_mean(starwars, homeworld, mass)
+grouped_mean(starwars, homeworld, mass) %>% head() %>% kable()
 ```
 
 ## Three more verbs
 
-`!!!` is like `!!` but for lists. 
-`:=` is for creating new names, for example in a mutate pipe
-`quo_name()` creates a string
+- `!!!` is like `!!` but for lists. 
+- `:=` is for creating new names, for example in a mutate pipe
+- `quo_name()` creates a string
 
 ## Putting it all together
 
@@ -89,7 +90,7 @@ grouped_mean2 <- function(.data, .summary_var, ...) {
 ```
 
 ```{r}
-grouped_mean2(starwars, height, gender, species)
+grouped_mean2(starwars, height, gender, species) %>% head %>% kable()
 ```
 
 ## How can I learn more?
